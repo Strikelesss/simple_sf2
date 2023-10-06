@@ -95,15 +95,29 @@ namespace simple_sf2
 
 	constexpr uint32_t PDTA_MODULATOR_SIZE = 10u;
 
+	enum class EGeneratorType final : uint16_t
+	{
+		startAddrsOffset = 0ui16, endAddrsOffset, startloopAddrsOffset, endloopAddrsOffset, startAddrsCoarseOffset,
+		modLfoToPitch, vibLfoToPitch, modEnvToPitch, initialFilterFc, initialFilterQ, modLfoToFilterFc,
+		modEnvToFilterFc, endAddrsCoarseOffset, modLfoToVolume, unused1, chorusEffectsSend, reverbEffectsSend,
+		pan, unused2, unused3, unused4, delayModLFO, freqModLFO, delayVibLFO, freqVibLFO, delayModEnv,
+		attackModEnv, holdModEnv, decayModEnv, sustainModEnv, releaseModEnv, keynumToModEnvHold,
+		keynumToModEnvDecay, delayVolEnv, attackVolEnv, holdVolEnv, decayVolEnv, sustainVolEnv,
+		releaseVolEnv, keynumToVolEnvHold, keynumToVolEnvDecay, instrument, reserved1, keyRange,
+		velRange, startloopAddrsCoarseOffset, keynum, velocity, initialAttenuation, reserved2,
+		endloopAddrsCoarseOffset, coarseTune, fineTune, sampleID, sampleModes, reserved3, scaleTuning,
+		exclusiveClass, overridingRootKey, unused5, endOper, GEN_MAX
+	};
+
 	struct pdta_generator final
 	{
 		void Read(std::ifstream& stream)
 		{
-			stream.read(reinterpret_cast<char*>(&m_genOper), 2);
+			stream.read(reinterpret_cast<char*>(&m_genOper), sizeof(EGeneratorType));
 			m_genAmount.Read(stream);
 		}
 
-		uint16_t m_genOper = 0ui16;
+		EGeneratorType m_genOper = EGeneratorType::startAddrsOffset;
 		genAmountType m_genAmount{};
 	};
 
@@ -113,8 +127,8 @@ namespace simple_sf2
 	{
 		void Read(std::ifstream& stream)
 		{
-			stream.read(reinterpret_cast<char*>(&m_genNdx), 4);
-			stream.read(reinterpret_cast<char*>(&m_modNdx), 4);
+			stream.read(reinterpret_cast<char*>(&m_genNdx), sizeof(int32_t));
+			stream.read(reinterpret_cast<char*>(&m_modNdx), sizeof(int32_t));
 		}
 
 		int32_t m_genNdx = 0;
@@ -132,12 +146,12 @@ namespace simple_sf2
 		void Read(std::ifstream& stream)
 		{
 			stream.read(m_presetName.data(), static_cast<std::streamsize>(m_presetName.size()));
-			stream.read(reinterpret_cast<char*>(&m_preset), 2);
-			stream.read(reinterpret_cast<char*>(&m_bank), 2);
-			stream.read(reinterpret_cast<char*>(&m_presetBagNdx), 2);
-			stream.read(reinterpret_cast<char*>(&m_library), 4);
-			stream.read(reinterpret_cast<char*>(&m_genre), 4);
-			stream.read(reinterpret_cast<char*>(&m_morphology), 4);
+			stream.read(reinterpret_cast<char*>(&m_preset), sizeof(int16_t));
+			stream.read(reinterpret_cast<char*>(&m_bank), sizeof(int16_t));
+			stream.read(reinterpret_cast<char*>(&m_presetBagNdx), sizeof(int16_t));
+			stream.read(reinterpret_cast<char*>(&m_library), sizeof(uint32_t));
+			stream.read(reinterpret_cast<char*>(&m_genre), sizeof(uint32_t));
+			stream.read(reinterpret_cast<char*>(&m_morphology), sizeof(uint32_t));
 		}
 
 		std::array<char, 20> m_presetName{};
@@ -173,7 +187,7 @@ namespace simple_sf2
 	 * Samples:
 	 */
 
-	enum struct SFSampleLink final : uint16_t
+	enum struct ESampleLinkType final : uint16_t
 	{
 		MONO_SAMPLE = 1ui16,
 		RIGHT_SAMPLE = 2ui16,
@@ -190,15 +204,15 @@ namespace simple_sf2
 		void Read(std::ifstream& stream)
 		{
 			stream.read(m_sampleName.data(), static_cast<std::streamsize>(m_sampleName.size()));
-			stream.read(reinterpret_cast<char*>(&m_sampleStart), 4);
-			stream.read(reinterpret_cast<char*>(&m_sampleEnd), 4);
-			stream.read(reinterpret_cast<char*>(&m_loopStart), 4);
-			stream.read(reinterpret_cast<char*>(&m_loopEnd), 4);
-			stream.read(reinterpret_cast<char*>(&m_sampleRate), 4);
-			stream.read(reinterpret_cast<char*>(&m_originalPitch), 1);
-			stream.read(reinterpret_cast<char*>(&m_pitchCorrection), 1);
-			stream.read(reinterpret_cast<char*>(&m_sampleLink), 2);
-			stream.read(reinterpret_cast<char*>(&m_sampleType), 2);
+			stream.read(reinterpret_cast<char*>(&m_sampleStart), sizeof(uint32_t));
+			stream.read(reinterpret_cast<char*>(&m_sampleEnd), sizeof(uint32_t));
+			stream.read(reinterpret_cast<char*>(&m_loopStart), sizeof(uint32_t));
+			stream.read(reinterpret_cast<char*>(&m_loopEnd), sizeof(uint32_t));
+			stream.read(reinterpret_cast<char*>(&m_sampleRate), sizeof(uint32_t));
+			stream.read(reinterpret_cast<char*>(&m_originalPitch), sizeof(uint8_t));
+			stream.read(reinterpret_cast<char*>(&m_pitchCorrection), sizeof(int8_t));
+			stream.read(reinterpret_cast<char*>(&m_sampleLink), sizeof(uint16_t));
+			stream.read(reinterpret_cast<char*>(&m_sampleType), sizeof(ESampleLinkType));
 		}
 
 		std::array<char, 20> m_sampleName{};
@@ -210,7 +224,7 @@ namespace simple_sf2
 		uint8_t m_originalPitch = 0ui8;
 		int8_t m_pitchCorrection = 0i8;
 		uint16_t m_sampleLink = 0ui16;
-		SFSampleLink m_sampleType = SFSampleLink::MONO_SAMPLE;
+		ESampleLinkType m_sampleType = ESampleLinkType::MONO_SAMPLE;
 	};
 
 	constexpr uint32_t PDTA_SHDR_SIZE = 46u;
