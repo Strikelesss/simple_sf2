@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include "sf2_types.hpp"
+#include <array>
 
 namespace simple_sf2
 {
@@ -46,7 +47,7 @@ namespace simple_sf2
 				if (riff.GetName() == "RIFF")
 				{
 					std::array<char, 4> sfbk{};
-					stream.read(sfbk.data(), static_cast<std::streamsize>(sfbk.size()));
+					stream.read(sfbk.data(), sfbk.size());
 
 					if (std::string_view{sfbk} == "sfbk")
 					{
@@ -61,9 +62,8 @@ namespace simple_sf2
 							const std::string_view chunkID{chunkIDData};
 							if (chunkID == "INFO")
 							{
-								const std::istream::pos_type readLoc(stream.tellg());
-
-								while (stream.tellg() - readLoc != chunkList.GetSize() - 4)
+								const std::istream::pos_type readLocStart(stream.tellg());
+								while (stream.tellg() - readLocStart != chunkList.GetSize() - 4)
 								{
 									RiffChunk subChunk;
 									subChunk.Read(stream);
@@ -105,9 +105,8 @@ namespace simple_sf2
 							}
 							else if (chunkID == "sdta")
 							{
-								const std::istream::pos_type readLoc(stream.tellg());
-
-								while (stream.tellg() - readLoc != chunkList.GetSize() - 4)
+								const std::istream::pos_type readLocStart(stream.tellg());
+								while (stream.tellg() - readLocStart != chunkList.GetSize() - 4)
 								{
 									RiffChunk subChunk;
 									subChunk.Read(stream);
@@ -125,11 +124,11 @@ namespace simple_sf2
 								{
 									RiffChunk subChunk;
 									subChunk.Read(stream);
-
+									
 									if (subChunk.GetName() == "phdr")
 									{
-										const uint32_t numPhdrs(subChunk.GetSize() / PDTA_PHDR_SIZE);
-										for (uint32_t i(0u); i < numPhdrs - 1u; ++i)
+										const size_t numPhdrs(subChunk.GetSize() / PDTA_PHDR_SIZE - 1);
+										for (size_t i(0); i < numPhdrs; ++i)
 										{
 											pdta_phdr phdr{};
 											phdr.Read(stream);
@@ -142,8 +141,8 @@ namespace simple_sf2
 									}
 									else if (subChunk.GetName() == "pbag" || subChunk.GetName() == "ibag")
 									{
-										const uint32_t numPBags(subChunk.GetSize() / PDTA_BAG_SIZE);
-										for (uint32_t i(0u); i < numPBags; ++i)
+										const size_t numBags(subChunk.GetSize() / sizeof(pdta_bag) - 1);
+										for (size_t i(0); i < numBags; ++i)
 										{
 											pdta_bag bag{};
 											bag.Read(stream);
@@ -152,28 +151,40 @@ namespace simple_sf2
 											{
 												outBank.m_presetBags.emplace_back(std::move(bag));
 											}
-											else { outBank.m_instrumentBags.emplace_back(std::move(bag)); }
+											else
+											{
+												outBank.m_instrumentBags.emplace_back(std::move(bag));
+											}
 										}
+
+										pdta_bag bag_terminator{};
+										bag_terminator.Read(stream);
 									}
 									else if (subChunk.GetName() == "pgen" || subChunk.GetName() == "igen")
 									{
-										const uint32_t numPGens(subChunk.GetSize() / PDTA_GENERATOR_SIZE);
-										for (uint32_t i(0u); i < numPGens; ++i)
+										const size_t numGens(subChunk.GetSize() / PDTA_GENERATOR_SIZE - 1);
+										for (size_t i(0); i < numGens; ++i)
 										{
 											pdta_generator gen{};
 											gen.Read(stream);
-
+											
 											if (subChunk.GetName() == "pgen")
 											{
 												outBank.m_presetGens.emplace_back(std::move(gen));
 											}
-											else { outBank.m_instrumentGens.emplace_back(std::move(gen)); }
+											else
+											{
+												outBank.m_instrumentGens.emplace_back(std::move(gen));
+											}
 										}
+
+										pdta_generator gen_terminator{};
+										gen_terminator.Read(stream);
 									}
 									else if (subChunk.GetName() == "pmod" || subChunk.GetName() == "imod")
 									{
-										const uint32_t numPMods(subChunk.GetSize() / PDTA_MODULATOR_SIZE);
-										for (uint32_t i(0u); i < numPMods; ++i)
+										const size_t numPMods(subChunk.GetSize() / PDTA_MODULATOR_SIZE - 1);
+										for (size_t i(0); i < numPMods; ++i)
 										{
 											pdta_modulator mod{};
 											mod.Read(stream);
@@ -182,13 +193,19 @@ namespace simple_sf2
 											{
 												outBank.m_presetMods.emplace_back(std::move(mod));
 											}
-											else { outBank.m_instrumentMods.emplace_back(std::move(mod)); }
+											else
+											{
+												outBank.m_instrumentMods.emplace_back(std::move(mod));
+											}
 										}
+
+										pdta_modulator mod_terminator{};
+										mod_terminator.Read(stream);
 									}
 									else if (subChunk.GetName() == "inst")
 									{
-										const uint32_t numInsts(subChunk.GetSize() / PDTA_INST_SIZE);
-										for (uint32_t i(0u); i < numInsts - 1u; ++i)
+										const size_t numInsts(subChunk.GetSize() / PDTA_INST_SIZE - 1);
+										for (size_t i(0); i < numInsts; ++i)
 										{
 											pdta_inst inst{};
 											inst.Read(stream);
@@ -201,8 +218,8 @@ namespace simple_sf2
 									}
 									else if (subChunk.GetName() == "shdr")
 									{
-										const uint32_t numShdrs(subChunk.GetSize() / PDTA_SHDR_SIZE);
-										for (uint32_t i(0u); i < numShdrs - 1u; ++i)
+										const size_t numShdrs(subChunk.GetSize() / PDTA_SHDR_SIZE - 1);
+										for (size_t i(0); i < numShdrs; ++i)
 										{
 											pdta_shdr shdr{};
 											shdr.Read(stream);
@@ -215,14 +232,12 @@ namespace simple_sf2
 									}
 									else
 									{
-										// std::cout << "Skipping " << subChunk.GetName() << "!\n";
 										stream.ignore(subChunk.GetSize());
 									}
 								}
 							}
 							else
 							{
-								// std::cout << "Skipping " << riff.GetID() << "!\n";
 								stream.ignore(chunkList.GetSize());
 							}
 						}
