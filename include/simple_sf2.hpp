@@ -49,7 +49,7 @@ namespace simple_sf2
 					std::array<char, 4> sfbk{};
 					stream.read(sfbk.data(), sfbk.size());
 
-					if (std::string_view{sfbk} == "sfbk")
+					if (std::string_view{sfbk.data(), sfbk.size()} == "sfbk")
 					{
 						while (!stream.eof())
 						{
@@ -59,7 +59,7 @@ namespace simple_sf2
 							std::array<char, 4> chunkIDData{};
 							stream.read(chunkIDData.data(), chunkIDData.size());
 
-							const std::string_view chunkID{chunkIDData};
+							const std::string_view chunkID{chunkIDData.data(), chunkIDData.size()};
 							if (chunkID == "INFO")
 							{
 								const std::istream::pos_type readLocStart(stream.tellg());
