@@ -91,13 +91,41 @@ namespace simple_sf2
 		kLinear = 0ui16, kAbsoluteValue = 2ui16,
 	};
 
+	enum struct SFControllerPalette final : uint8_t
+	{
+		NO_CONTROLLER = 0ui8,
+		NOTE_ON_VELOCITY = 2ui8,
+		NOTE_ON_KEY_NUM = 3ui8,
+		POLY_PRESSURE = 10ui8,
+		CHANNEL_PRESSURE = 13ui8,
+		PITCH_WHEEL = 14ui8,
+		PITCH_WHEEL_SENSITIVITY = 16ui8,
+	};
+
+	enum struct SFDirection final : uint8_t
+	{
+		INCREASING = 0ui8, DECREASING = 1ui8
+	};
+	
+	enum struct SFPolarity final : uint8_t
+	{
+		UNIPOLAR = 0ui8, BIPOLAR = 1ui8
+	};
+
+	enum struct SFControllerType final : uint8_t
+	{
+		LINEAR = 0ui8, CONCAVE = 1ui8, CONVEX = 2ui8, SWITCH = 3ui8
+	};
+
 	struct SFModulator final
 	{
+		// The CC index (as per: https://www.midi.org/forms/midi_chart-v2.pdf#page=6)
 		uint8_t m_index : 7;
-		uint8_t m_controller : 1;
-		uint8_t m_direction : 1;
-		uint8_t m_polarity : 1;
-		uint8_t m_type : 6;
+		
+		SFControllerPalette m_palette : 1;
+		SFDirection m_direction : 1;
+		SFPolarity m_polarity : 1;
+		SFControllerType m_type : 6;
 	};
 	
 	struct pdta_modulator final
