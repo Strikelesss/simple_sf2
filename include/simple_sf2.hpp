@@ -26,7 +26,7 @@ namespace simple_sf2
 		std::vector<pdta_modulator> m_instrumentMods{};
 	
 		std::vector<pdta_shdr> m_samples{};
-		std::vector<uint16_t> m_sampleData{};
+		std::vector<int16_t> m_sampleData{};
 	};
 
 	enum struct ESF2ReadResult final
@@ -110,10 +110,10 @@ namespace simple_sf2
 								{
 									RiffChunk subChunk;
 									subChunk.Read(stream);
-
-									outBank.m_sampleData.resize(subChunk.GetSize());
+									
+									outBank.m_sampleData.resize(subChunk.GetSize() / sizeof(int16_t));
 									stream.read(reinterpret_cast<char*>(outBank.m_sampleData.data()),
-										static_cast<std::streamsize>(outBank.m_sampleData.size()));
+										static_cast<std::streamsize>(outBank.m_sampleData.size() * sizeof(int16_t)));
 								}
 							}
 							else if (chunkID == "pdta")

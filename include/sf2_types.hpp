@@ -3,19 +3,69 @@
 
 namespace simple_sf2
 {
+	constexpr size_t SOUNDFONT_MAX_NAME_SIZE = 20;
+
+	namespace unit_helpers
+	{
+		constexpr uint16_t MIN_FILTER_CUTOFF_CENTS = 1500ui16;
+		constexpr uint16_t MAX_FILTER_CUTOFF_CENTS = 13500ui16;
+
+		inline double timecentsToSeconds(const uint16_t timecents)
+		{
+			return std::pow(2.0, static_cast<double>(timecents) / 1200.0);
+		}
+
+		inline uint16_t secondsToTimecents(const double sec)
+		{
+			return static_cast<uint16_t>(std::lround(std::log(sec) / std::log(2) * 1200.0));
+		}
+		
+		inline double centsToHertz(const uint16_t cents)
+		{
+			return 8.176 * std::pow(2.0, static_cast<double>(cents) / 1200.0);
+		}
+
+		inline uint16_t hertzToCents(const double hertz)
+		{
+			return static_cast<uint16_t>(std::lround(std::log(hertz / 8.176) / std::log(2) * 1200));
+		}
+
+		inline double tenthPercentToPercent(const int16_t tenthPercent)
+		{
+			return static_cast<double>(tenthPercent) / 10.0;
+		}
+
+		inline int16_t percentToTenthPercent(const double percent)
+		{
+			return static_cast<int16_t>(std::lround(percent * 10.0));
+		}
+
+		inline double centibelsToDecibels(const uint16_t cb)
+		{
+			return static_cast<double>(cb) / 10.0;
+		}
+		
+		inline uint16_t decibelsToCentibels(const double db)
+		{
+			return static_cast<uint16_t>(std::lround(db * 10.0));
+		}
+	}
+	
 	/*
 	 * Chunks:
 	 */
+
+	constexpr size_t RIFF_CHUNK_NAME_SIZE = 4;
 
 	struct RiffChunk final
 	{
 		void Read(std::ifstream& stream)
 		{
 			m_chunkName.clear();
-			m_chunkName.resize(4);
-			stream.read(m_chunkName.data(), static_cast<std::streamsize>(m_chunkName.size()));
+			m_chunkName.resize(RIFF_CHUNK_NAME_SIZE);
+			stream.read(m_chunkName.data(), RIFF_CHUNK_NAME_SIZE);
 			
-			stream.read(reinterpret_cast<char*>(&m_chunkSize), 4);
+			stream.read(reinterpret_cast<char*>(&m_chunkSize), sizeof(uint32_t));
 		}
 
 		[[nodiscard]] const std::string& GetName() const { return m_chunkName; }
@@ -183,8 +233,8 @@ namespace simple_sf2
 		void Read(std::ifstream& stream)
 		{
 			m_presetName.clear();
-			m_presetName.resize(20);
-			stream.read(m_presetName.data(), static_cast<std::streamsize>(m_presetName.size()));
+			m_presetName.resize(SOUNDFONT_MAX_NAME_SIZE);
+			stream.read(m_presetName.data(), SOUNDFONT_MAX_NAME_SIZE);
 			
 			stream.read(reinterpret_cast<char*>(&m_preset), sizeof(int16_t));
 			stream.read(reinterpret_cast<char*>(&m_bank), sizeof(int16_t));
@@ -203,7 +253,7 @@ namespace simple_sf2
 		uint32_t m_morphology = 0u;
 	};
 
-	constexpr size_t PDTA_PHDR_SIZE = 20 + sizeof(int16_t) + sizeof(int16_t) + sizeof(int16_t) + sizeof(uint32_t)
+	constexpr size_t PDTA_PHDR_SIZE = SOUNDFONT_MAX_NAME_SIZE + sizeof(int16_t) + sizeof(int16_t) + sizeof(int16_t) + sizeof(uint32_t)
 		+ sizeof(uint32_t) + sizeof(uint32_t);
 
 	/*
@@ -215,8 +265,8 @@ namespace simple_sf2
 		void Read(std::ifstream& stream)
 		{
 			m_instrumentName.clear();
-			m_instrumentName.resize(20);
-			stream.read(m_instrumentName.data(), static_cast<std::streamsize>(m_instrumentName.size()));
+			m_instrumentName.resize(SOUNDFONT_MAX_NAME_SIZE);
+			stream.read(m_instrumentName.data(), SOUNDFONT_MAX_NAME_SIZE);
 			
 			stream.read(reinterpret_cast<char*>(&m_instBagNdx), sizeof(int16_t));
 		}
@@ -225,7 +275,7 @@ namespace simple_sf2
 		int16_t m_instBagNdx = 0i16;
 	};
 
-	constexpr size_t PDTA_INST_SIZE = 20 + sizeof(int16_t);
+	constexpr size_t PDTA_INST_SIZE = SOUNDFONT_MAX_NAME_SIZE + sizeof(int16_t);
 
 	/*
 	 * Samples:
@@ -248,8 +298,8 @@ namespace simple_sf2
 		void Read(std::ifstream& stream)
 		{
 			m_sampleName.clear();
-			m_sampleName.resize(20);
-			stream.read(m_sampleName.data(), static_cast<std::streamsize>(m_sampleName.size()));
+			m_sampleName.resize(SOUNDFONT_MAX_NAME_SIZE);
+			stream.read(m_sampleName.data(), SOUNDFONT_MAX_NAME_SIZE);
 			
 			stream.read(reinterpret_cast<char*>(&m_sampleStart), sizeof(uint32_t));
 			stream.read(reinterpret_cast<char*>(&m_sampleEnd), sizeof(uint32_t));
@@ -274,6 +324,6 @@ namespace simple_sf2
 		ESampleLinkType m_sampleType = ESampleLinkType::MONO_SAMPLE;
 	};
 
-	constexpr size_t PDTA_SHDR_SIZE = 20 + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t)
+	constexpr size_t PDTA_SHDR_SIZE = SOUNDFONT_MAX_NAME_SIZE + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t)
 		+ sizeof(uint32_t) + sizeof(uint8_t) + sizeof(int8_t) + sizeof(uint16_t) + sizeof(ESampleLinkType);
 }
