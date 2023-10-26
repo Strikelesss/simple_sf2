@@ -19,7 +19,7 @@ namespace simple_sf2
 		std::vector<pdta_bag> m_presetBags{};
 		std::vector<pdta_generator> m_presetGens{};
 		std::vector<pdta_modulator> m_presetMods{};
-	
+		
 		std::vector<pdta_inst> m_instruments{};
 		std::vector<pdta_bag> m_instrumentBags{};
 		std::vector<pdta_generator> m_instrumentGens{};
@@ -239,6 +239,54 @@ namespace simple_sf2
 							else
 							{
 								stream.ignore(chunkList.GetSize());
+							}
+						}
+
+						for(size_t i(0); i < outBank.m_presets.size(); ++i)
+						{
+							auto& preset(outBank.m_presets[i]);
+							const size_t numPBags(i + 1 < outBank.m_presets.size() ? outBank.m_presets[i + 1].m_presetBagNdx : outBank.m_presetBags.size());
+							for(size_t j(preset.m_presetBagNdx); j < numPBags; ++j)
+							{
+								// Generators
+
+								std::vector<const pdta_generator*> gens;
+				
+								const size_t numPGens(j + 1 < outBank.m_presetBags.size() ? outBank.m_presetBags[j + 1].m_genNdx : outBank.m_presetGens.size());
+								for(size_t k(outBank.m_presetBags[j].m_genNdx); k < numPGens; ++k) { gens.emplace_back(&outBank.m_presetGens[k]); }
+
+								// Modulators
+
+								std::vector<const pdta_modulator*> mods;
+
+								const size_t numPMods(j + 1 < outBank.m_presetBags.size() ? outBank.m_presetBags[j + 1].m_modNdx : outBank.m_presetMods.size());
+								for(size_t k(outBank.m_presetBags[j].m_modNdx); k < numPMods; ++k) { mods.emplace_back(&outBank.m_presetMods[k]); }
+
+								preset.m_regions.emplace_back(std::move(gens), std::move(mods));
+							}
+						}
+
+						for(size_t i(0); i < outBank.m_instruments.size(); ++i)
+						{
+							auto& instrument(outBank.m_instruments[i]);
+							const size_t numIBags(i + 1 < outBank.m_instruments.size() ? outBank.m_instruments[i + 1].m_instBagNdx : outBank.m_instrumentBags.size());
+							for(size_t j(instrument.m_instBagNdx); j < numIBags; ++j)
+							{
+								// Generators
+
+								std::vector<const pdta_generator*> gens;
+				
+								const size_t numIGens(j + 1 < outBank.m_instrumentBags.size() ? outBank.m_instrumentBags[j + 1].m_genNdx : outBank.m_instrumentGens.size());
+								for(size_t k(outBank.m_instrumentBags[j].m_genNdx); k < numIGens; ++k) { gens.emplace_back(&outBank.m_instrumentGens[k]); }
+
+								// Modulators
+
+								std::vector<const pdta_modulator*> mods;
+
+								const size_t numIMods(j + 1 < outBank.m_instrumentBags.size() ? outBank.m_instrumentBags[j + 1].m_modNdx : outBank.m_instrumentMods.size());
+								for(size_t k(outBank.m_instrumentBags[j].m_modNdx); k < numIMods; ++k) { mods.emplace_back(&outBank.m_instrumentMods[k]); }
+
+								instrument.m_regions.emplace_back(std::move(gens), std::move(mods));
 							}
 						}
 

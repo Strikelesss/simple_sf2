@@ -3,7 +3,7 @@
 
 namespace simple_sf2
 {
-	constexpr size_t SOUNDFONT_MAX_NAME_SIZE = 20;
+	constexpr size_t SOUNDFONT_MAX_NAME_LEN = 20;
 
 	namespace unit_helpers
 	{
@@ -55,15 +55,15 @@ namespace simple_sf2
 	 * Chunks:
 	 */
 
-	constexpr size_t RIFF_CHUNK_NAME_SIZE = 4;
+	constexpr size_t RIFF_CHUNK_NAME_LEN = 4;
 
 	struct RiffChunk final
 	{
 		void Read(std::ifstream& stream)
 		{
 			m_chunkName.clear();
-			m_chunkName.resize(RIFF_CHUNK_NAME_SIZE);
-			stream.read(m_chunkName.data(), RIFF_CHUNK_NAME_SIZE);
+			m_chunkName.resize(RIFF_CHUNK_NAME_LEN);
+			stream.read(m_chunkName.data(), RIFF_CHUNK_NAME_LEN);
 			
 			stream.read(reinterpret_cast<char*>(&m_chunkSize), sizeof(uint32_t));
 		}
@@ -225,6 +225,19 @@ namespace simple_sf2
 	};
 
 	/*
+	 * Regions (non-standard, made for simplification of querying info)
+	 */
+
+	struct SFRegion final
+	{
+		explicit SFRegion(std::vector<const pdta_generator*>&& gens, std::vector<const pdta_modulator*>&& mods)
+			: m_gens(std::move(gens)), m_mods(std::move(mods)) {}
+		
+		std::vector<const pdta_generator*> m_gens;
+		std::vector<const pdta_modulator*> m_mods;
+	};
+
+	/*
 	 * Presets
 	 */
 
@@ -233,8 +246,8 @@ namespace simple_sf2
 		void Read(std::ifstream& stream)
 		{
 			m_presetName.clear();
-			m_presetName.resize(SOUNDFONT_MAX_NAME_SIZE);
-			stream.read(m_presetName.data(), SOUNDFONT_MAX_NAME_SIZE);
+			m_presetName.resize(SOUNDFONT_MAX_NAME_LEN);
+			stream.read(m_presetName.data(), SOUNDFONT_MAX_NAME_LEN);
 			
 			stream.read(reinterpret_cast<char*>(&m_preset), sizeof(int16_t));
 			stream.read(reinterpret_cast<char*>(&m_bank), sizeof(int16_t));
@@ -251,9 +264,11 @@ namespace simple_sf2
 		uint32_t m_library = 0u;
 		uint32_t m_genre = 0u;
 		uint32_t m_morphology = 0u;
+
+		std::vector<SFRegion> m_regions;
 	};
 
-	constexpr size_t PDTA_PHDR_SIZE = SOUNDFONT_MAX_NAME_SIZE + sizeof(int16_t) + sizeof(int16_t) + sizeof(int16_t) + sizeof(uint32_t)
+	constexpr size_t PDTA_PHDR_SIZE = SOUNDFONT_MAX_NAME_LEN + sizeof(int16_t) + sizeof(int16_t) + sizeof(int16_t) + sizeof(uint32_t)
 		+ sizeof(uint32_t) + sizeof(uint32_t);
 
 	/*
@@ -265,17 +280,19 @@ namespace simple_sf2
 		void Read(std::ifstream& stream)
 		{
 			m_instrumentName.clear();
-			m_instrumentName.resize(SOUNDFONT_MAX_NAME_SIZE);
-			stream.read(m_instrumentName.data(), SOUNDFONT_MAX_NAME_SIZE);
+			m_instrumentName.resize(SOUNDFONT_MAX_NAME_LEN);
+			stream.read(m_instrumentName.data(), SOUNDFONT_MAX_NAME_LEN);
 			
 			stream.read(reinterpret_cast<char*>(&m_instBagNdx), sizeof(int16_t));
 		}
 
 		std::string m_instrumentName;
 		int16_t m_instBagNdx = 0i16;
+
+		std::vector<SFRegion> m_regions;
 	};
 
-	constexpr size_t PDTA_INST_SIZE = SOUNDFONT_MAX_NAME_SIZE + sizeof(int16_t);
+	constexpr size_t PDTA_INST_SIZE = SOUNDFONT_MAX_NAME_LEN + sizeof(int16_t);
 
 	/*
 	 * Samples:
@@ -298,8 +315,8 @@ namespace simple_sf2
 		void Read(std::ifstream& stream)
 		{
 			m_sampleName.clear();
-			m_sampleName.resize(SOUNDFONT_MAX_NAME_SIZE);
-			stream.read(m_sampleName.data(), SOUNDFONT_MAX_NAME_SIZE);
+			m_sampleName.resize(SOUNDFONT_MAX_NAME_LEN);
+			stream.read(m_sampleName.data(), SOUNDFONT_MAX_NAME_LEN);
 			
 			stream.read(reinterpret_cast<char*>(&m_sampleStart), sizeof(uint32_t));
 			stream.read(reinterpret_cast<char*>(&m_sampleEnd), sizeof(uint32_t));
@@ -324,6 +341,6 @@ namespace simple_sf2
 		ESampleLinkType m_sampleType = ESampleLinkType::MONO_SAMPLE;
 	};
 
-	constexpr size_t PDTA_SHDR_SIZE = SOUNDFONT_MAX_NAME_SIZE + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t)
+	constexpr size_t PDTA_SHDR_SIZE = SOUNDFONT_MAX_NAME_LEN + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t)
 		+ sizeof(uint32_t) + sizeof(uint8_t) + sizeof(int8_t) + sizeof(uint16_t) + sizeof(ESampleLinkType);
 }
